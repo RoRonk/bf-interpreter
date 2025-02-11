@@ -10,7 +10,7 @@ input_str:	.asciz "%c"
 output_str:	.asciz "%c"
 
 main:
-		# prologue
+	# prologue
 	pushq %rbp 			# push the base pointer (and align the stack)
 	movq %rsp, %rbp		# copy stack pointer value to base pointer
 
