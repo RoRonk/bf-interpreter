@@ -10,22 +10,24 @@ input_str:	.asciz "%c"
 output_str:	.asciz "%c"
 
 main:
-	# prologue
+		# prologue
 	pushq %rbp 			# push the base pointer (and align the stack)
-	movq %rsp, %rbp			# copy stack pointer value to base pointer
-	# callee
-	pushq %rbx			# callee saved register so we push onto the stack (BF pointer)
-	pushq %r12			# callee saved register so we push onto the stack (Store string char)
-	pushq %r13			# callee saved register so we push onto the stack (Instruction pointer)
-	pushq %r14			# callee saved register so we push onto the stack (Store input memory address)
+	movq %rsp, %rbp		# copy stack pointer value to base pointer
 
-	call bf_start
+	# push all callee values on stack
+	pushq %rbx			# BF pointer (which cell we are doing current operation on)
+	pushq %r12			# Store string char (temp to store current character)
+	pushq %r13			# Instruction pointer (where in string)
+	pushq %r14			# Store input memory address
 
-	# callee
-	popq %r14			# callee saved register so we pop back into r14
-	popq %r13			# callee saved register so we pop back into r13
-	popq %r12			# callee saved register so we pop back into r12
-	popq %rbx			# callee saved register so we pop back into rbx
+	call start
+
+	# restore all callee registers
+	popq %r14			
+	popq %r13			
+	popq %r12			
+	popq %rbx		
+
 	# epilogue
 	movq %rbp, %rsp			# clear local variables from stack
 	popq %rbp			# restore base pointer location 
@@ -85,19 +87,19 @@ bf_loop:
 
 bf_move_right:
 	incq %rbx			# move data pointer 1 to the right
-	jmp next_command		# jump to next_command
+	jmp next_command		
 
 bf_move_left:
 	decq %rbx			# move data pointer 1 to the left
-	jmp next_command		# jump to next_command
+	jmp next_command		
 
 bf_incr_cell:
 	incb buffer(, %rbx, 1)		# increments the byte at [buffer + %RBX]
-	jmp next_command		# jump to next_command
+	jmp next_command		
 
 bf_decr_cell:
 	decb buffer(, %rbx, 1)		# increments the byte at [buffer + %RBX]
-	jmp next_command		# jump to next_command
+	jmp next_command		
 
 bf_output_char:
 	movq $0, %rax			# no vector register
@@ -113,13 +115,13 @@ bf_input_char:
 	leaq -16(%rbp) , %rsi 		# load address of stack in rsi
 	movq $input_str, %rdi 		# load first argument of scanf
 	movq $0 , %rax 			# no vector registers for scanf
-	call scanf 			# call scanf
+	call scanf 			
 
 	movq -16(%rbp), %rdi		# move the byte at [buffer + %RBX] to %SIL (%RSI)
 	movb %dil, buffer(, %rbx, 1)	# move rdi to memory cell
 	addq $16, %rsp			# add 16 to %RSP	
 
-	jmp next_command		# jump to next_command
+	jmp next_command		
 
 bf_open_bracket:
 	cmpb $0, buffer(, %rbx, 1) 	# compare current cell value with 0
@@ -133,7 +135,7 @@ bf_jump_past:
 	cmpb $91, (%r14, %r13)		# compare R12B to 91 '[' 
 	jne not_open_bracket		# if not '[', then jump to not_open_bracket
 	incq %rdi			# else increment counter (RDI)
-	jmp bf_jump_past		# loop
+	jmp bf_jump_past		
 
 	not_open_bracket:
 	// Step 2.2
